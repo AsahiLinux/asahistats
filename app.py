@@ -30,9 +30,10 @@ def app(environ, start_response):
 
     try:
         content_length = int(environ['CONTENT_LENGTH'])
-        qs = environ["wsgi.input"].read(content_length)
-        if len(qs) > 131072:
+        if content_length > 131072:
             raise Exception("Too long")
+
+        qs = environ["wsgi.input"].read(content_length)
 
         data = json.loads(qs)
         
