@@ -1,5 +1,10 @@
 #!/usr/bin/python3
-import json, psycopg
+import json
+
+try:
+    import psycopg
+except ImportError:
+    import psycopg2 as psycopg
 
 g_conn = None
 
