@@ -34,9 +34,9 @@ echo "Breakdown by installer tag:"
 cat <<EOF | su - postgres -s /bin/sh -c "psql asahistats"
 select
     count(*) as count,
-    data#>>Array['installer','tag'] as tag
+    trim(regexp_replace(data->>'os_name', '([^a-zA-Z])\(?[0-9]+\)? ?([^a-zA-Z]|$)', '\1\3', 'g')) as os
 from stats
-group by tag
+group by os
 order by count desc;
 EOF
 
