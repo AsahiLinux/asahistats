@@ -7,7 +7,7 @@ cd "$(dirname "$0")"
 echo "Total installs:"
 
 cat <<EOF | su - postgres -s /bin/sh -c "psql asahistats"
-select count(*) as count from stats;
+select count(*) as count from stats where not(hide);
 EOF
 
 echo "Breakdown by device:"
@@ -19,6 +19,7 @@ select
     devices.description as description
 from stats
 left join devices on stats.data->>'device_class'=devices.device_class
+where not(hide)
 group by stats.data->>'device_class', devices.description
 order by count desc;
 EOF
