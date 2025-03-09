@@ -28,4 +28,17 @@ echo
 
 echo "Note: Devices with only a few installs are development tests (or people having fun)."
 
+echo
+
+echo "Breakdown by installer tag:"
+
+cat <<EOF | su - postgres -s /bin/sh -c "psql asahistats"
+select
+    count(*) as count,
+    trim(regexp_replace(data->>'os_name', '([^a-zA-Z])\(?[0-9]+\)? ?([^a-zA-Z]|$)', '\1\3', 'g')) as os
+from stats
+group by os
+order by count desc;
+EOF
+
 ) > htdocs/stats.txt
