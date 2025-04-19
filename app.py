@@ -10,7 +10,7 @@ g_conn = None
 
 DBINFO = "dbname=asahistats user=asahistats"
 
-def app(environ, start_response):
+def application(environ, start_response):
     global g_conn
 
     form = {}
