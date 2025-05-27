@@ -4,15 +4,41 @@ cd "$(dirname "$0")"
 
 (
 
-echo "Total installs:"
-
-cat <<EOF | su - postgres -s /bin/sh -c "psql asahistats"
+TOTAL=$(
+cat <<EOF | psql -qAt asahistats
 select count(*) as count from stats where not(hide);
 EOF
+)
 
-echo "Breakdown by device:"
+cat <<EOF
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 
-cat <<EOF | su - postgres -s /bin/sh -c "psql asahistats"
+    <title>Asahi Linux install statistics.</title>
+  </head>
+  <body>
+    <div class="container">
+      <h2>Breakdown by device:</h2>
+      <div class="table-responsive">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th scope="col">Count</th>
+              <th scope="col">Device class</th>
+              <th scope="col">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+EOF
+
+cat <<EOF | psql -qAt asahistats
+select
+    '<tr><td>' || count::text || '</td><td>' || device_class || '</td><td>' || description || '</td></tr>'
+from (
 select
     count(*) as count,
     stats.data->>'device_class' as device_class,
@@ -21,24 +47,21 @@ from stats
 left join devices on stats.data->>'device_class'=devices.device_class
 where not(hide)
 group by stats.data->>'device_class', devices.description
-order by count desc;
+order by count(*) desc) as a;
 EOF
 
-echo
+cat <<EOF
+          </tbody>
+        </table>
+      </div>
+      <p>Total installs: $TOTAL</p>
+      <p>Note: Devices with only a few installs are development tests (or people having fun).</p>
+    </div>
+  </body>
+</html>
 
-echo "Note: Devices with only a few installs are development tests (or people having fun)."
-
-echo
-
-echo "Breakdown by installed OS:"
-
-cat <<EOF | su - postgres -s /bin/sh -c "psql asahistats"
-select
-    count(*) as count,
-    trim(regexp_replace(data->>'os_name', '([^a-zA-Z])\(?[0-9]+\)? ?([^a-zA-Z]|$)', '\1\3', 'g')) as os
-from stats
-group by os
-order by count desc;
 EOF
+
+
 
 ) > htdocs/stats.txt
